@@ -1,23 +1,20 @@
 package com.ankit.userservice.controllers;
 
 import com.ankit.userservice.Services.UserService;
-import com.ankit.userservice.Services.UserServiceImpl;
 import com.ankit.userservice.dtos.*;
 import com.ankit.userservice.models.AppUser;
 import com.ankit.userservice.models.Token;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class UserController {
-
-    private final UserServiceImpl userServiceImpl;
     UserService userService;
 
-    UserController(UserService userService, UserServiceImpl userServiceImpl) {
+    UserController(UserService userService) {
         this.userService = userService;
-        this.userServiceImpl = userServiceImpl;
     }
 
     @PostMapping("/signup")
@@ -34,19 +31,23 @@ public class UserController {
         return responseDto;
     }
 
-    @GetMapping("/validate/{token}")
-    public ResponseEntity<Boolean> validate(@PathVariable("token") String token) {
+    @PostMapping("/validate")
+    public ResponseEntity<Boolean> validate(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+
+        if(token.startsWith("Bearer ")) {
+            token = token.replace("Bearer ", ""); // Remove "Bearer " prefix
+        }
         AppUser user = userService.validateToken(token);
         ResponseEntity<Boolean> responseEntity;
         if(user == null) {
-            responseEntity = new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            responseEntity = new ResponseEntity<>(false, HttpStatus.UNAUTHORIZED);
         }else{
             responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
         }
         return responseEntity;
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/logout-user")
     public ResponseEntity<Void> logout(@RequestBody LogoutRequestDto requestDto) {
         AppUser user = userService.logout(requestDto.getToken());
         ResponseEntity<Void> responseEntity;
